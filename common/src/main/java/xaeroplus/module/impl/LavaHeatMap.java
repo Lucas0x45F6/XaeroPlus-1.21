@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.Fluids;
+import xaeroplus.event.ClientTickEvent;
 import xaeroplus.event.XaeroWorldChangeEvent;
 import xaeroplus.module.Module;
 
@@ -33,20 +34,30 @@ public class LavaHeatMap extends Module {
     public void onEnable() {
         scannedChunks.clear();
         pendingDetections.clear();
+        System.out.println("[DEBUG] LavaHeatMap enabled.");
     }
 
     @Override
     public void onDisable() {
         scannedChunks.clear();
         pendingDetections.clear();
+        System.out.println("[DEBUG] LavaHeatMap disabled.");
     }
 
     @EventHandler
-    public void onTick(Minecraft minecraft) {
+    public void onClientTick(ClientTickEvent.Post event) {
+        System.out.println("[DEBUG] ClientTickEvent.Post fired.");
+
         var level = mc.level;
         var player = mc.player;
-        if (level == null || player == null || mc.levelRenderer.viewArea == null) return;
-        if (!level.dimension().location().getPath().equals("the_nether")) return;
+        if (level == null || player == null || mc.levelRenderer.viewArea == null) {
+            System.out.println("[DEBUG] Skipping tick - world/player not ready.");
+            return;
+        }
+        if (!level.dimension().location().getPath().equals("the_nether")) {
+            System.out.println("[DEBUG] Not in Nether, skipping.");
+            return;
+        }
 
         int playerChunkX = player.chunkPosition().x;
         int playerChunkZ = player.chunkPosition().z;
@@ -62,8 +73,12 @@ public class LavaHeatMap extends Module {
                 if (scannedChunks.contains(chunkPos)) continue; // Already scanned
 
                 LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
-                if (chunk == null) continue; // Chunk not loaded yet
+                if (chunk == null) {
+                    System.out.println("[DEBUG] Chunk (" + chunkX + ", " + chunkZ + ") not loaded yet.");
+                    continue;
+                }
 
+                System.out.println("[DEBUG] Scanning chunk (" + chunkX + ", " + chunkZ + ")");
                 scanChunk(level, chunk);
                 scannedChunks.add(chunkPos); // Mark as scanned
             }
@@ -77,6 +92,7 @@ public class LavaHeatMap extends Module {
                 sb.append(coords).append(" ");
             }
             mc.player.sendSystemMessage(Component.literal(sb.toString().trim()));
+            System.out.println("[DEBUG] Sent batch to chat: " + sb.toString().trim());
             pendingDetections.clear();
             lastSendTime = now;
         }
@@ -98,12 +114,16 @@ public class LavaHeatMap extends Module {
                     if (state.getBlock() == Blocks.LAVA && state.getFluidState().isSource()) {
                         if (isLavaPillar(level, worldX, y, worldZ)) {
                             pendingDetections.add("(" + worldX + ", " + worldZ + ")");
-                            break; // Only record the topmost source block
+                            System.out.println("[DEBUG] Lava pillar detected at (" + worldX + ", " + worldZ + ")");
+                            break; // Only record topmost lava source
                         }
                     }
                 }
             }
         }
+
+        // Uncomment this for forced fake detection if needed:
+        // pendingDetections.add("(FAKE 0,0)");
     }
 
     private boolean isLavaPillar(final Level level, final int x, final int startY, final int z) {
@@ -122,12 +142,17 @@ public class LavaHeatMap extends Module {
                 break;
             }
         }
-        return flowingLavaCount >= 2; // 3 block pillar minimum (1 source + 2 flowing)
+
+        if (flowingLavaCount >= 2) {
+            System.out.println("[DEBUG] Confirmed pillar height: " + (flowingLavaCount + 1) + " blocks at (" + x + ", " + z + ")");
+        }
+        return flowingLavaCount >= 2; // 3 block pillar minimum
     }
 
     @EventHandler
     public void onWorldChange(final XaeroWorldChangeEvent event) {
         scannedChunks.clear();
         pendingDetections.clear();
+        System.out.println("[DEBUG] World changed - reset caches.");
     }
 }
