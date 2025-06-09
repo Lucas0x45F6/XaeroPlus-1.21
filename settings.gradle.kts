@@ -32,7 +32,7 @@ dependencyResolutionManagement {
 			library("minimap-neo", "maven.modrinth:xaeros-minimap:${minimap_version_neo}_NeoForge_1.21")
             library("mixinextras-common", "io.github.llamalad7:mixinextras-common:0.4.1")
             library("mixinextras-forge", "io.github.llamalad7:mixinextras-forge:0.4.1")
-			library("caffeine", "com.github.ben-manes.caffeine:caffeine:3.2.0")
+			library("caffeine", "com.github.ben-manes.caffeine:caffeine:3.2.1")
 			library("lambdaEvents", "net.lenni0451:LambdaEvents:2.4.2")
 			library("waystones-fabric", "maven.modrinth:waystones:21.1.4+fabric-1.21.1")
 			library("waystones-forge", "maven.modrinth:waystones:21.1.4+forge-1.21.1")
